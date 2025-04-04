@@ -5,3 +5,4 @@ edition = "2024"
 
 [dependencies]
 gpiod = "0.3.0"
+syslog = "7.0.0"

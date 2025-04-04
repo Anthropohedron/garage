@@ -1,6 +1,21 @@
+extern crate syslog;
 extern crate gpiod;
 
+use std::process;
+use syslog::{Facility, Formatter3164, Logger, LoggerBackend};
 use gpiod::{Chip, Options, Edge, EdgeDetect, Lines, Input};
+
+const PROGRAM_NAME: &str = "garagemon";
+
+fn init_logger() -> Logger<LoggerBackend, Formatter3164> {
+    let formatter = Formatter3164 {
+        facility: Facility::LOG_USER,
+        hostname: None,
+        process: PROGRAM_NAME.into(),
+        pid: process::id(),
+    };
+    return syslog::unix(formatter).expect("Could not set up syslog logging");
+}
 
 const DOOR_OPEN_PIN: u32 = 12;
 const DOOR_CLOSED_PIN: u32 = 16;
@@ -23,10 +38,12 @@ fn status_change(last: &mut Edge, current: Edge) -> bool {
 }
 
 fn main() -> std::io::Result<()> {
+    let mut logger = init_logger();
     let mut inputs = init_gpio();
     let mut last_edge_open = if inputs.get_values([false; 2])?[0] { Edge::Falling } else { Edge::Rising };
     let mut last_edge_closed: Edge = if inputs.get_values([false; 2])?[1] { Edge::Falling } else { Edge::Rising };
 
+    logger.info("Started garagemon").expect("Logging failed");
     loop {
         let event = inputs.read_event()?;
         let changed: bool = match event.line {
@@ -36,13 +53,11 @@ fn main() -> std::io::Result<()> {
         };
         if changed {
             let _ = match (last_edge_open, last_edge_closed) {
-                (Edge::Rising, Edge::Falling) => println!("Status: Door closed"),
-                (Edge::Falling, Edge::Rising) => println!("Status: Door open"),
-                (Edge::Falling, Edge::Falling) => println!("Status: Door in motion"),
-                (Edge::Rising, Edge::Rising) => println!("Confusingly open and closed simultaneously"),
+                (Edge::Rising, Edge::Falling) => logger.info("Door closed"),
+                (Edge::Falling, Edge::Rising) => logger.info("Door open"),
+                (Edge::Falling, Edge::Falling) => logger.info("Door in motion"),
+                (Edge::Rising, Edge::Rising) => logger.info("Confusingly open and closed simultaneously")
             };
         }
     }
-
-    //Ok(())
 }

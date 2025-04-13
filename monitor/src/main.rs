@@ -15,7 +15,8 @@ fn main() -> std::io::Result<()> {
     let args: Vec<String> = env::args().collect();
     let filename = match args.len() {
         0 => None,
-        1 => Some(&args[0]),
+        1 => None,
+        2 => Some(&args[1]),
         _ => panic!("Too many arguments!"),
     };
     let mut updater = Updater::new(filename);

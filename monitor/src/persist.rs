@@ -24,7 +24,7 @@ impl Updater {
         };
         let mut logger = syslog::unix(formatter).expect("Could not set up syslog logging");
         logger
-            .info("Started {PROGRAM_NAME}")
+            .info(format!("Started {PROGRAM_NAME}"))
             .expect("Logging failed");
         let default_filename = DEFAULT_STATUS_FILENAME.to_string();
         let filename = status_filename.unwrap_or(&default_filename).clone();

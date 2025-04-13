@@ -1,26 +1,11 @@
 extern crate syslog;
 
-use std::{collections::HashMap, fs, process, sync::LazyLock};
+use std::{fs, process};
 use syslog::{Facility, Formatter3164, Logger, LoggerBackend};
+use crate::status::{STATUS, DoorStatus};
 
 const PROGRAM_NAME: &str = "garagemon";
 const DEFAULT_STATUS_FILENAME: &str = "/var/run/garagemon_status";
-static STATUS: LazyLock<HashMap<DoorStatus, &'static str>> = LazyLock::new(|| {
-    HashMap::from([
-        (DoorStatus::Closed, "Closed"),
-        (DoorStatus::Open, "Open"),
-        (DoorStatus::Indeterminate, "Indeterminate"),
-        (DoorStatus::Invalid, "Invalid"),
-    ])
-});
-
-#[derive(Eq, Hash, PartialEq)]
-pub enum DoorStatus {
-    Closed,
-    Open,
-    Indeterminate,
-    Invalid,
-}
 
 pub struct Updater {
     status_filename: String,

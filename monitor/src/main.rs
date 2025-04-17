@@ -1,15 +1,27 @@
 extern crate gpiod;
 
-use std::env;
+use std::{env, sync::mpsc::{self, Receiver}, thread};
 
 mod status;
 mod persist;
 use persist::Updater;
 mod sensor;
 use sensor::Sensor;
+use status::DoorStatus;
 
 const DOOR_OPEN_PIN: u32 = 12;
 const DOOR_CLOSED_PIN: u32 = 16;
+
+fn logger_thread(mut updater: Updater, rx: Receiver<Option<DoorStatus>>) {
+    loop {
+        match rx.recv() {
+            Ok(Some(status)) => {
+                updater.update(status);
+            }
+            _ => { return }
+        }
+    }
+}
 
 fn main() -> std::io::Result<()> {
     let args: Vec<String> = env::args().collect();
@@ -21,9 +33,12 @@ fn main() -> std::io::Result<()> {
     };
     let mut updater = Updater::new(filename);
     let mut sensor = Sensor::new(DOOR_OPEN_PIN, DOOR_CLOSED_PIN);
+    let (tx, rx) = mpsc::channel::<Option<DoorStatus>>();
 
     updater.update(sensor.get_status());
+
+    thread::spawn(move || logger_thread(updater, rx));
     loop {
-        sensor.get_event().and_then(|status| Some(updater.update(status)));
+        sensor.get_event().and_then(|status| Some(tx.send(Some(status))));
     }
 }

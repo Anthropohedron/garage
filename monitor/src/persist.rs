@@ -52,3 +52,9 @@ impl Updater {
         };
     }
 }
+
+impl Drop for Updater {
+    fn drop(&mut self) {
+        let _ = self.logger.info(format!("Exiting {PROGRAM_NAME}"));
+    }
+}

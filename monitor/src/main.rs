@@ -1,6 +1,7 @@
+extern crate ctrlc;
 extern crate gpiod;
 
-use std::{env, sync::mpsc::{self, Receiver}, thread};
+use std::{env, process::exit, sync::mpsc::{self, Receiver}, thread};
 
 mod status;
 mod persist;
@@ -34,10 +35,13 @@ fn main() -> std::io::Result<()> {
     let mut updater = Updater::new(filename);
     let mut sensor = Sensor::new(DOOR_OPEN_PIN, DOOR_CLOSED_PIN);
     let (tx, rx) = mpsc::channel::<Option<DoorStatus>>();
+    let handler_tx = tx.clone();
 
     updater.update(sensor.get_status());
 
-    thread::spawn(move || logger_thread(updater, rx));
+    ctrlc::set_handler(move || { let _ = handler_tx.send(None); })
+        .expect("Can't set signal handler");
+    thread::spawn(move || { logger_thread(updater, rx); exit(0); });
     loop {
         sensor.get_event().and_then(|status| Some(tx.send(Some(status))));
     }

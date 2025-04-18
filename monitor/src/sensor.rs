@@ -1,7 +1,7 @@
 extern crate gpiod;
 
-use gpiod::{Bias, Chip, Edge, EdgeDetect, Input, Lines, Options};
 use crate::status::DoorStatus;
+use gpiod::{Bias, Chip, Edge, EdgeDetect, Input, Lines, Options};
 
 #[derive(Debug, PartialEq, Eq, Hash)]
 pub struct SensorStates {
@@ -11,7 +11,9 @@ pub struct SensorStates {
 
 #[derive(Debug)]
 enum WhichSensor {
-    Open, Closed, Invalid
+    Open,
+    Closed,
+    Invalid,
 }
 
 pub struct Sensor {
@@ -25,19 +27,19 @@ use std::{collections::HashMap, sync::LazyLock};
 pub static STATUS_MAP: LazyLock<HashMap<SensorStates, DoorStatus>> = LazyLock::new(|| {
     let closed = SensorStates {
         open_sensor: Edge::Falling,
-        closed_sensor: Edge::Rising
+        closed_sensor: Edge::Rising,
     };
-    let open= SensorStates {
+    let open = SensorStates {
         open_sensor: Edge::Rising,
-        closed_sensor: Edge::Falling
+        closed_sensor: Edge::Falling,
     };
-    let invalid= SensorStates {
+    let invalid = SensorStates {
         open_sensor: Edge::Falling,
-        closed_sensor: Edge::Falling
+        closed_sensor: Edge::Falling,
     };
-    let indeterminate= SensorStates {
+    let indeterminate = SensorStates {
         open_sensor: Edge::Rising,
-        closed_sensor: Edge::Rising
+        closed_sensor: Edge::Rising,
     };
     HashMap::from([
         (open, DoorStatus::Closed),
@@ -61,7 +63,7 @@ fn status_change(last: &mut SensorStates, sensor: WhichSensor, current: Edge) ->
     match sensor {
         WhichSensor::Open => single_status_change(&mut last.open_sensor, current),
         WhichSensor::Closed => single_status_change(&mut last.closed_sensor, current),
-        WhichSensor::Invalid => false
+        WhichSensor::Invalid => false,
     }
 }
 
@@ -73,7 +75,9 @@ impl Sensor {
             .edge(EdgeDetect::Both) // configure edges to detect
             .consumer("garagemon"); // optionally set consumer string
         let lines = chip.request_lines(opts).expect("Could not access GPIO");
-        let values = lines.get_values([false; 2]).expect("Cannot read GPIO values");
+        let values = lines
+            .get_values([false; 2])
+            .expect("Cannot read GPIO values");
         let last_edge_open = if values[0] {
             Edge::Rising
         } else {
@@ -92,8 +96,8 @@ impl Sensor {
         return Self {
             inputs: lines,
             last_state: last_state,
-            last_status: last_status
-        }
+            last_status: last_status,
+        };
     }
 
     pub fn get_status(&self) -> DoorStatus {
@@ -103,7 +107,7 @@ impl Sensor {
     pub fn get_event(&mut self) -> Option<DoorStatus> {
         let event = match self.inputs.read_event() {
             Ok(e) => e,
-            _ => return None
+            _ => return None,
         };
         let which: WhichSensor = match event.line {
             0 => WhichSensor::Open,

@@ -1,6 +1,8 @@
 use std::{env, sync::LazyLock};
 
-use actix_web::{get, http::header::ContentType, post, App, HttpResponse, HttpServer, Responder, web};
+use actix_web::{
+    App, HttpResponse, HttpServer, Responder, get, http::header::ContentType, post, web,
+};
 mod app;
 use app::AppImpl;
 type AppData = web::Data<AppImpl>;
@@ -33,7 +35,7 @@ async fn activate(data: AppData) -> impl Responder {
             .body("{\"success\": true}"),
         Err(msg) => HttpResponse::InternalServerError()
             .content_type(ContentType::json())
-            .body(format!("{{\"error\": \"{msg}\"}}"))
+            .body(format!("{{\"error\": \"{msg}\"}}")),
     }
 }
 
@@ -41,12 +43,13 @@ async fn activate(data: AppData) -> impl Responder {
 async fn main() -> std::io::Result<()> {
     let utils = AppImpl::new(&STATUS);
 
-    HttpServer::new(move || App::new()
+    HttpServer::new(move || {
+        App::new()
             .app_data(utils.clone())
             .service(get_status)
             .service(activate)
-        )
-        .bind(("127.0.0.1", 8080))?
-        .run()
-        .await
+    })
+    .bind(("127.0.0.1", 8080))?
+    .run()
+    .await
 }

@@ -1,8 +1,8 @@
 extern crate syslog;
 
+use crate::status::{DoorStatus, STATUS};
 use std::{fs, process};
 use syslog::{Facility, Formatter3164, Logger, LoggerBackend};
-use crate::status::{STATUS, DoorStatus};
 
 const PROGRAM_NAME: &str = "garagemon";
 const DEFAULT_STATUS_FILENAME: &str = "/var/run/garagemon/status";

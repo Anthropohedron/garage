@@ -1,4 +1,3 @@
-
 use std::{collections::HashMap, sync::LazyLock};
 
 pub static STATUS: LazyLock<HashMap<DoorStatus, &'static str>> = LazyLock::new(|| {

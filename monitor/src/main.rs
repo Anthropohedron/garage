@@ -1,10 +1,15 @@
 extern crate ctrlc;
 extern crate gpiod;
 
-use std::{env, process::exit, sync::mpsc::{self, Receiver}, thread};
+use std::{
+    env,
+    process::exit,
+    sync::mpsc::{self, Receiver},
+    thread,
+};
 
-mod status;
 mod persist;
+mod status;
 use persist::Updater;
 mod sensor;
 use sensor::Sensor;
@@ -19,7 +24,7 @@ fn logger_thread(mut updater: Updater, rx: Receiver<Option<DoorStatus>>) {
             Ok(Some(status)) => {
                 updater.update(status);
             }
-            _ => { return }
+            _ => return,
         }
     }
 }
@@ -39,10 +44,17 @@ fn main() -> std::io::Result<()> {
 
     updater.update(sensor.get_status());
 
-    ctrlc::set_handler(move || { let _ = handler_tx.send(None); })
-        .expect("Can't set signal handler");
-    thread::spawn(move || { logger_thread(updater, rx); exit(0); });
+    ctrlc::set_handler(move || {
+        let _ = handler_tx.send(None);
+    })
+    .expect("Can't set signal handler");
+    thread::spawn(move || {
+        logger_thread(updater, rx);
+        exit(0);
+    });
     loop {
-        sensor.get_event().and_then(|status| Some(tx.send(Some(status))));
+        sensor
+            .get_event()
+            .and_then(|status| Some(tx.send(Some(status))));
     }
 }

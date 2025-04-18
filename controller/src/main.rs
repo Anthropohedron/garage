@@ -1,9 +1,11 @@
 use std::{env, sync::LazyLock};
 
-use actix_web::{get, post, App, HttpServer, Responder, web};
+use actix_web::{get, http::header::ContentType, post, App, HttpResponse, HttpServer, Responder, web};
 mod app;
 use app::AppImpl;
 type AppData = web::Data<AppImpl>;
+
+const DEFAULT_STATUS_FILENAME: &str = "/var/run/garagemon/status";
 
 pub static STATUS: LazyLock<String> = LazyLock::new(|| {
     let args: Vec<String> = env::args().collect();
@@ -13,7 +15,7 @@ pub static STATUS: LazyLock<String> = LazyLock::new(|| {
     if args.len() == 2 {
         return args[1].clone();
     }
-    return "/var/run/garagemon/status".to_string();
+    return DEFAULT_STATUS_FILENAME.to_string();
 });
 
 #[get("/status")]
@@ -25,7 +27,14 @@ async fn get_status(data: AppData) -> impl Responder {
 #[post("/activate")]
 async fn activate(data: AppData) -> impl Responder {
     let utils = <AppImpl as Clone>::clone(&data);
-    utils.activate()
+    match utils.activate().await {
+        Ok(_) => HttpResponse::Ok()
+            .content_type(ContentType::json())
+            .body("{\"success\": true}"),
+        Err(msg) => HttpResponse::InternalServerError()
+            .content_type(ContentType::json())
+            .body(format!("{{\"error\": \"{msg}\"}}"))
+    }
 }
 
 #[actix_web::main]

@@ -1,3 +1,43 @@
-fn main() {
-    println!("Hello, world!");
+use std::{env, sync::LazyLock};
+
+use actix_web::{get, post, App, HttpServer, Responder, web};
+mod app;
+use app::AppImpl;
+type AppData = web::Data<AppImpl>;
+
+pub static STATUS: LazyLock<String> = LazyLock::new(|| {
+    let args: Vec<String> = env::args().collect();
+    if args.len() > 2 {
+        panic!("Too many arguments!");
+    }
+    if args.len() == 2 {
+        return args[1].clone();
+    }
+    return "/var/run/garagemon/status".to_string();
+});
+
+#[get("/status")]
+async fn get_status(data: AppData) -> impl Responder {
+    let utils = <AppImpl as Clone>::clone(&data);
+    utils.get_status()
+}
+
+#[post("/activate")]
+async fn activate(data: AppData) -> impl Responder {
+    let utils = <AppImpl as Clone>::clone(&data);
+    utils.activate()
+}
+
+#[actix_web::main]
+async fn main() -> std::io::Result<()> {
+    let utils = AppImpl::new(&STATUS);
+
+    HttpServer::new(move || App::new()
+            .app_data(utils.clone())
+            .service(get_status)
+            .service(activate)
+        )
+        .bind(("127.0.0.1", 8080))?
+        .run()
+        .await
 }

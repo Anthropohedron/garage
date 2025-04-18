@@ -5,7 +5,7 @@ use syslog::{Facility, Formatter3164, Logger, LoggerBackend};
 use crate::status::{STATUS, DoorStatus};
 
 const PROGRAM_NAME: &str = "garagemon";
-const DEFAULT_STATUS_FILENAME: &str = "/var/run/garagemon_status";
+const DEFAULT_STATUS_FILENAME: &str = "/var/run/garagemon/status";
 
 pub struct Updater {
     status_filename: String,

@@ -47,6 +47,8 @@ pub static STATUS_MAP: LazyLock<HashMap<SensorStates, DoorStatus>> = LazyLock::n
     ])
 });
 
+const GPIO_DEV: &str = "gpiochip0";
+
 fn single_status_change(last: &mut Edge, current: Edge) -> bool {
     if *last == current {
         return false;
@@ -65,11 +67,11 @@ fn status_change(last: &mut SensorStates, sensor: WhichSensor, current: Edge) ->
 
 impl Sensor {
     pub fn new(door_open_pin: u32, door_closed_pin: u32) -> Self {
-        let chip = Chip::new("gpiochip0").expect("Could not start monitoring GPIO");
+        let chip = Chip::new(GPIO_DEV).expect("Could not connect to GPIO");
         let opts = Options::input([door_open_pin, door_closed_pin]) // configure lines offsets
             .bias(Bias::PullUp) // configure bias to maintain current
             .edge(EdgeDetect::Both) // configure edges to detect
-            .consumer("garage-door"); // optionally set consumer string
+            .consumer("garagemon"); // optionally set consumer string
         let lines = chip.request_lines(opts).expect("Could not access GPIO");
         let values = lines.get_values([false; 2]).expect("Cannot read GPIO values");
         let last_edge_open = if values[0] {

@@ -1,7 +1,7 @@
 use std::{env, sync::LazyLock};
 
 use actix_web::{
-    App, HttpResponse, HttpServer, Responder, get, http::header::ContentType, post, web,
+    get, http::header::ContentType, post, web, App, HttpResponse, HttpServer, Responder
 };
 mod app;
 use app::AppImpl;
@@ -45,7 +45,7 @@ async fn main() -> std::io::Result<()> {
 
     HttpServer::new(move || {
         App::new()
-            .app_data(utils.clone())
+            .app_data(web::Data::new(utils.clone()))
             .service(get_status)
             .service(activate)
     })

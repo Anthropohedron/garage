@@ -1,16 +1,20 @@
 #!/bin/sh
 
+usage () {
+	echo "Usage: $0 [-r] [-w]" >&2
+	exit 1
+}
+
 WATCH=false
-if test $# -gt 0
-then
-	if test $# -eq 1 -a x"$1" = "x-w"
-	then
-		WATCH=true
-	else
-		echo "Usage: $0 [-w]" >&2
-		exit 1
-	fi
-fi
+RELEASE=false
+while test $# -gt 0
+do
+	case "x$1" in
+		x-r) shift; RELEASE=true ;;
+		x-w) shift; WATCH=true ;;
+		*) usage ;;
+	esac
+done
 
 CONFIG1='target.aarch64-unknown-linux-gnu.linker = "/usr/bin/aarch64-linux-gnu-gcc"'
 set -- build \
@@ -23,4 +27,9 @@ then
 else
 	set -- "$@" "$CONFIG1"
 fi
+if $RELEASE
+then
+	set -- "$@" --release
+fi
+
 exec cargo "$@"

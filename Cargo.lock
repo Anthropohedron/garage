@@ -332,14 +332,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "613afe47fcd5fac7ccf1db93babcb082c5994d996f20b8b159f2ad1658eb5724"
 
 [[package]]
-name = "controller"
-version = "0.1.0"
-dependencies = [
- "actix-web",
- "tokio-gpiod",
-]
-
-[[package]]
 name = "cookie"
 version = "0.16.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -513,6 +505,23 @@ dependencies = [
  "futures-task",
  "pin-project-lite",
  "pin-utils",
+]
+
+[[package]]
+name = "garage-control"
+version = "1.0.0"
+dependencies = [
+ "actix-web",
+ "tokio-gpiod",
+]
+
+[[package]]
+name = "garage-monitor"
+version = "1.0.0"
+dependencies = [
+ "ctrlc",
+ "gpiod",
+ "syslog",
 ]
 
 [[package]]
@@ -873,15 +882,6 @@ dependencies = [
  "log",
  "wasi 0.11.0+wasi-snapshot-preview1",
  "windows-sys 0.52.0",
-]
-
-[[package]]
-name = "monitor"
-version = "0.1.0"
-dependencies = [
- "ctrlc",
- "gpiod",
- "syslog",
 ]
 
 [[package]]

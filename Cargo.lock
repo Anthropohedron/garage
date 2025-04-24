@@ -512,6 +512,8 @@ name = "garage-control"
 version = "1.0.0"
 dependencies = [
  "actix-web",
+ "ctrlc",
+ "syslog",
  "tokio-gpiod",
 ]
 

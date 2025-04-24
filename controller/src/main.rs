@@ -5,6 +5,7 @@ use actix_web::{
 };
 mod app;
 use app::AppImpl;
+mod logging;
 type AppData = web::Data<AppImpl>;
 
 const DEFAULT_STATUS_FILENAME: &str = "/var/run/garagemon/status";

@@ -1,22 +1,13 @@
-extern crate ctrlc;
-extern crate syslog;
 extern crate tokio_gpiod;
 
 use actix_web::rt::time::sleep;
-use std::{fs, process, sync::{mpsc::{channel, Receiver, Sender}, LazyLock}, thread, time::Duration};
-use syslog::{Facility, Formatter3164, Logger, LoggerBackend};
+use crate::logging::{LogEvent, LogTx, LOG_TX};
+use std::{fs, time::Duration};
 use tokio_gpiod::{Active, Chip, Lines, Options, Output};
 
 const GPIO_DEV: &str = "gpiochip0";
 const GPIO_LINE: u32 = 4;
 const DELAY_MILLIS: u64 = 500;
-const LOG_PROCESS: &str = "garagemon";
-
-pub enum LogEvent {
-    Starting, Activated, Exiting
-}
-pub type LogTx = Sender<LogEvent>;
-pub type Syslogger = Logger<LoggerBackend, Formatter3164>;
 
 #[derive(Clone)]
 pub struct AppImpl {
@@ -25,48 +16,6 @@ pub struct AppImpl {
     status_filename: String,
     log_tx: LogTx,
 }
-
-fn logger_thread(mut logger: Syslogger, rx: Receiver<LogEvent>) {
-    loop {
-        match rx.recv() {
-            Ok(LogEvent::Starting) => {
-                let _ = logger.info("Starting garagecontrol");
-            },
-            Ok(LogEvent::Activated) => {
-                let _ = logger.info("Activated garage door opener");
-            },
-            _ => {
-                let _ = logger.info("Exiting garagecontrol");
-                return;
-            }
-        }
-    }
-}
-
-static LOG_TX: LazyLock<Sender<LogEvent>> = LazyLock::new(|| {
-    let formatter = Formatter3164 {
-        facility: Facility::LOG_USER,
-        hostname: None,
-        process: LOG_PROCESS.into(),
-        pid: process::id(),
-    };
-    let logger = syslog::unix(formatter)
-        .expect("Could not set up syslog logging");
-    let (tx, rx) = channel::<LogEvent>();
-    let handler_tx = tx.clone();
-
-    ctrlc::set_handler(move || {
-        let _ = handler_tx.send(LogEvent::Exiting);
-    })
-    .expect("Can't set signal handler");
-    thread::spawn(|| {
-        logger_thread(logger, rx);
-        process::exit(0);
-    });
-    tx.send(LogEvent::Starting)
-    .expect("Could not log to syslog");
-    tx
-});
 
 type OutputResult<'a> = Result<Lines<Output>, &'a str>;
 type ActivateResult<'a> = Result<(), &'a str>;

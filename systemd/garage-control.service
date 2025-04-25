@@ -1,0 +1,17 @@
+[Unit]
+Description=Garage control and status web service
+After=network.target rsyslog.service
+Requires=syslog.service
+StartLimitIntervalSec=0
+
+[Service]
+ExecStart=/usr/local/bin/garage-control
+Type=simple
+Restart=always
+RestartSec=1
+StartLimitBurst=5
+User=garagemon
+StandardOutput=journal+console
+
+[Install]
+WantedBy=multi-user.target

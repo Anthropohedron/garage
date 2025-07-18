@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html><head>
+<title>Garage</title>
+<style media="screen" type="text/css">
+.container {
+	width: 100vw;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+}
+.status .spinner {
+	display: none;
+}
+.spinner {
+	display: block;
+	width: 60px;
+	height: 60px;
+	mask: radial-gradient(circle, black 7px 7px, transparent 1px 1px) content-box
+		border-box 5% 5% / 28px 28px;
+	background: conic-gradient(#00DDEE 90deg, #FF0000 90deg 180deg, magenta 180deg 270deg, #00DD00 270deg 360deg);
+	animation: 1.5s infinite linear normal spin;
+}
+@keyframes spin {
+	0% {
+		rotate: none;
+	}
+	25% {
+		rotate: 90deg;
+	}
+	50% {
+		rotate: 180deg;
+	}
+	75% {
+		rotate: 270deg;
+	}
+	100% {
+		rotate: 360deg;
+	}
+}
+</style>
+<style media="screen" type="text/css">
+.status-message,
+.status-message > * {
+	display: none;
+}
+.status .status-message {
+	display: block;
+	background: rgba(255, 255, 255, 0.5);
+	padding: 4px 4px 2px 4px;
+}
+.status.Error .status-message > .Error,
+.status.Closed .status-message > .Closed,
+.status.Open .status-message > .Open,
+.status.Indeterminate .status-message > .Indeterminate,
+.status.Invalid .status-message > .Invalid {
+	display: inline;
+}
+.status-message .door {
+	text-transform: uppercase;
+	font-weight: bolder;
+}
+body {
+	margin: 0;
+	border: 0;
+	padding: 0;
+	height: 100vh;
+}
+body.status.Error {
+	background: repeating-linear-gradient(#DDDD00, #444444 10px, #DDDD00 20px);
+}
+body.status.Closed {
+	background: linear-gradient(#AAFFAA, #224422);
+}
+body.status.Open {
+	background: linear-gradient(#FF4444, #442222);
+}
+body.status.Indeterminate {
+	background: linear-gradient(#AAAAAA, #333333);
+}
+body.status.Invalid {
+	background: repeating-linear-gradient(#DD0000, #EEEEEE 10px, #DD0000 20px);
+}
+</style>
+<script type="application/javascript">
+const getStatus = function() {
+	const minRefresh = 2000;
+	var curTimeout = null;
+	const req = new Request("garage/status", { cache: "no-cache" });
+	function makeRequest(delay, recur) {
+		if (curTimeout !== null) {
+			cancelTimeout(curTimeout);
+			curTimeout = null;
+		}
+		const msecs = delay > 0 ? delay : 0;
+		curTimeout = setTimeout(handleGetStatus, msecs, !!recur, msecs);
+	}
+	async function handleGetStatus(recur, delay) {
+		curTimeout = null;
+		try {
+			const response = await fetch(req);
+			if (response.status !== 200) {
+				throw new Error("Request failed with status " + response.status);
+			}
+			const status = await response.text();
+			switch (status) {
+				case "Closed":
+				case "Open":
+				case "Indeterminate":
+				case "Invalid":
+					document.body.className = "status " + status;
+					return status;
+				default:
+					throw new Error("Unknown status: " + status);
+			}
+		} catch (err) {
+			const msg = "Failed to load garage status:\n" + err;
+			const msgNode = document.getElementById("statusError");
+			document.body.className = "status Error";
+			if (msgNode) {
+				msgNode.innerText = msg;
+			} else {
+				alert(msg);
+			}
+		} finally {
+			if (recur) {
+				const msecs = delay >= minRefresh ? delay : minRefresh;
+				makeRequest(msecs, true);
+			}
+		}
+	}
+	return makeRequest;
+}();
+</script>
+<script type="application/javascript">
+const activate = function() {
+	const req = new Request("garage/activate", { cache: "no-cache", method: "POST" });
+	async function getJson(response) {
+		try {
+			return await response.json();
+		} catch (err) {
+			try {
+				return {
+					success: false,
+					error: "JSON error:\n\n" + err,
+					bodyText: await response.text()
+				};
+			} catch (err2) {
+				return {
+					success: false,
+					error: "JSON error:\n\n" + err + "\n\nText error:\n\n" + err2
+				};
+			}
+		}
+	}
+	async function makeRequest() {
+		const btn = document.getElementById("activateButton");
+		var json = {};
+		var httpStatus = -1;
+		if (btn) btn.disabled = true;
+		try {
+			const response = await fetch(req);
+			httpStatus = response.status;
+			json = await getJson(response);
+		} catch (err) {
+			json.success = false;
+			json.error = "Fetch error: " + err;
+		}
+		if (btn && btn.disabled) btn.disabled = false;
+		if (typeof json !== "object") {
+			json = {
+				success: false,
+				error: "No data in response"
+			};
+		}
+		json.httpStatus = httpStatus;
+		if (httpStatus !== 200) {
+			json.success = false;
+		}
+		//TODO: do something with the JSON
+	}
+	return makeRequest;
+}();
+</script>
+</head><body>
+<div class="container">
+	<h2 class="status-message">
+		<span class="Closed">The door is <span class="door">closed</span></span>
+		<span class="Open">The door is <span class="door">open</span></span>
+		<span class="Indeterminate">The door is in motion (or stuck)</span>
+		<span class="Invalid">Something is wrong</span>
+		<span class="Error" id="statusError"></span>
+	</h2>
+	<div class="spinner"></div>
+</div>
+<div class="container">
+	<button onClick="activate()">Activate Opener</button>
+</div>
+
+<script type="application/javascript">
+	getStatus(0, true);
+</script>
+</body></html>
+

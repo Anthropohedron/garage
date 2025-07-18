@@ -31,8 +31,6 @@ executables.
    values that are currently hardcoded (e.g. GPIO lines and chip, listen
    host and port)
 1. Use proper logging instead of logging directly to syslog
-1. Have the controller provide an actual web page interface instead of just
-   a read and write pair of endpoints
 1. Use some better IPC mechanism (Unix domain socket?) to share door state
    from the monitor to the controller
 1. Include documentation of how pins should be connected to hardware

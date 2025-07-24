@@ -2,6 +2,8 @@
 
 This was developed to run on a Raspberry Pi 4B, but it could be tweaked to
 run on pretty much anything supporting the Linux GPIO chardev interface.
+This README is just about the code, but there's more information about
+deployment and hardware and such in the [docs](docs/README.md).
 
 ## Controller
 
@@ -19,11 +21,6 @@ when the door is fully closed. It logs program start, program exit, and the
 new state of the garage door whenever an event changes it. It logs to
 syslog under the `garagemon` process name. It also writes to a file in
 `/var/run` for the controller to read.
-
-## Services
-
-The `systemd` directory has example service unit files for the two
-executables.
 
 ## Future Work
 
